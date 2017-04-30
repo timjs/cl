@@ -1,0 +1,13 @@
+name: cl
+version: 0.1.0
+
+authors:
+  - Tim Steenvoorden <tim.steenvoorden@gmail.com>
+
+targets:
+  cl:
+    main: src/cl.cr
+
+crystal: 0.22.0
+
+license: MIT
