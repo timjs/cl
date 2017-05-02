@@ -25,7 +25,7 @@ end
 
 class String
   def quote
-    String.build do |str|
+    String.build(self.bytesize + 2) do |str|
       str << "`" << self << "`"
     end
   end
@@ -34,6 +34,9 @@ end
 # Project ######################################################################
 
 class Project
+  def self.init
+  end
+
   def initialize
   end
 
@@ -57,34 +60,31 @@ class Project
 
   def prune
   end
-
-  def self.init
-  end
 end
 
 # Main #########################################################################
 
 USAGE = "\
-Clean command line tools.
+Clean command line tools
 
 Usage:
-    cl <command> [<args>...]
+    cl <command> [<arguments>...]
     cl [options]
 
 Commands:
-    help                Show this message.
-    init                Initialise new project
-    show info           Show project info
-    show types          Show types of all functions.
-    unlit               Unliterate modules.
-    build               Compile project.
-    run                 Build and run project.
-    clean               Clean build files.
-    prune               Alias for `clean --all`.
+    help        Show this message
+    init        Initialise new project
+    show info   Show project info
+    show types  Show types of all functions
+    unlit       Unliterate modules
+    build       Compile project
+    run         Build and run project
+    clean       Clean build files
+    prune       Alias for `clean --all`
 
 Options:
-    -h --help           Show this message.
-    --version           Show version.
+    -h, --help  Show this message
+    --version   Show version
 
     -v, --verbose LEVEL  Set verbosity level [default: warn]
 " # TODO: Use DocOpt to parse options
