@@ -2,11 +2,16 @@ require "logger"
 require "colorize"
 require "option_parser"
 
+# Constants ####################################################################
+
+LEGACY_PROJECT_FILE_NAME = "Project.prj"
+
 # Logger #######################################################################
 
-log = Logger.new(STDOUT)
-log.level = Logger::INFO
-log.formatter = Logger::Formatter.new do |severity, _datetime, _progname, message, io|
+# NOTE: Should be constant, otherwise it is not visible inside classes
+LOG = Logger.new(STDOUT)
+LOG.level = Logger::INFO
+LOG.formatter = Logger::Formatter.new do |severity, _datetime, _progname, message, io|
   io << case severity
   when "DEBUG"
     ":: ".colorize.white
@@ -33,7 +38,38 @@ end
 
 # Project ######################################################################
 
+# class Manifest
+#   @project : ProjectInfo
+#   @executable : ExecutableInfo
+#
+#   def initialize
+#     LOG.info("Reading project file")
+#
+#     # ...
+#
+#   end
+#
+#   class ProjectInfo
+#     @name : String
+#     @version : String
+#     @authors : Array(String)
+#
+#     @sourcedir : String
+#
+#     @modules : Array(String)
+#     @other_modules : Array(String)
+#     @libraries : Array(String)
+#   end
+#
+#   class ExecutableInfo
+#     @name : String
+#     @main : String
+#   end
+# end
+
 class Project
+  # @manifest : Manifest
+
   def self.init
   end
 
@@ -56,9 +92,22 @@ class Project
   end
 
   def clean
+    LOG.info("Cleaning files")
+
+    Dir.glob("**/Clean System Files/", "*-sapl", "*-www") do |pat|
+      LOG.debug(pat)
+      File.delete(pat)
+    end
   end
 
   def prune
+    clean
+    LOG.info("Pruning files")
+
+    Dir.glob( # manifest.executable.name,
+LEGACY_PROJECT_FILE_NAME, "*-data") do |pat|
+      File.delete(pat)
+    end
   end
 end
 
@@ -122,11 +171,11 @@ begin
     when nil
       puts USAGE
     else
-      log.fatal(String::Builder.new << cmd.quote << "is not a valid command, run `cl help` to see a list of all available commands")
+      LOG.fatal(String::Builder.new << cmd.quote << "is not a valid command, run `cl help` to see a list of all available commands")
     end
   end
 rescue exc
-  log.fatal(String::Builder.new << "Fatal error occured: " << exc)
+  LOG.fatal(String::Builder.new << "Fatal error occured: " << exc)
 end
 
 OPTIONS = {} of Symbol => String | Int32 | Bool
