@@ -258,7 +258,7 @@ begin
     end
   end
 rescue exc
-  LOG.fatal(String::Builder.new << "Fatal error occured: " << exc << " (" << exc.class << ")")
+  LOG.fatal(String::Builder.new << exc << " (" << exc.class << ")")
 end
 
 # OPTIONS = {} of Symbol => String | Int32 | Bool
