@@ -9,7 +9,7 @@ LEGACY_PROJECT_FILE_NAME = "Project.prj"
 # Logger #######################################################################
 
 # NOTE: Should be constant, otherwise it is not visible inside classes
-LOG = Logger.new(STDOUT)
+LOG = Logger.new(STDERR)
 LOG.level = Logger::INFO
 LOG.formatter = Logger::Formatter.new do |severity, _datetime, _progname, message, io|
   io << case severity
