@@ -229,9 +229,9 @@ begin
     # For other options we need to be in a project directory
     prj = Project.new
 
-    case cmd = ARGV.pop?
+    case cmd = ARGV.shift?
     when "show"
-      case ARGV.pop?
+      case ARGV.shift?
       when "info"
         prj.show_info
       when "types"
