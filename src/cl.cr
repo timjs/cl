@@ -3,10 +3,6 @@ require "colorize"
 require "option_parser"
 require "YAML"
 
-# Constants ####################################################################
-
-LEGACY_PROJECT_FILE_NAME = "Project.prj"
-
 # Exceptions ###################################################################
 
 class Unimplemented < Exception
@@ -39,6 +35,24 @@ class String
     String.build(self.bytesize + 2) do |str|
       str << "`" << self << "`"
     end
+  end
+end
+
+# Clm ##########################################################################
+
+class Clm < Process
+  def run(manifest, *extras)
+    args = Array(String).new(4 + 2*manifest.dependencies.size + extras.size)
+    args << "-dynamics"
+    args << "-ms"
+    args << "-I" << manifest.sourcedir
+    manifest.dependencies.each do |dep|
+      args << "-IL" << dep
+    end
+    args.push *extras
+
+    LOG.debug(String::Builder.new << "Running clm with " << args.quote)
+    super("clm", args: args)
   end
 end
 
@@ -170,14 +184,15 @@ class Project
     clean
     LOG.info("Pruning files")
 
-    Dir.glob( # manifest.executable.name,
-LEGACY_PROJECT_FILE_NAME, "*-data") do |pat|
+    # NOTE: can't splat an array because size is unknown at compile time, therefore we push args to the created `keys` array
+    Dir.glob(@manifest.executables.keys << LEGACY_FILE_NAME << "*-data") do |pat|
       File.delete(pat)
     end
   end
 
   @icl_modules : Array(String)?
   @dcl_modules : Array(String)?
+  @lcl_modules : Array(String)?
 
   private def icl_modules
     @icl_modules ||= @manifest.exposed_modules.each.chain(@manifest.other_modules.each).map do |mod|
@@ -188,6 +203,9 @@ LEGACY_PROJECT_FILE_NAME, "*-data") do |pat|
     @dcl_modules ||= @manifest.exposed_modules.each.chain(@manifest.other_modules.each).map do |mod|
       mod.gsub(".", File::SEPARATOR) + ".dcl"
     end.to_a
+  end
+  private def lcl_modules
+    @lcl_modules ||= Dir.glob("**/*.lcl")
   end
 end
 
