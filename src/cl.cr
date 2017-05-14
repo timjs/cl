@@ -12,7 +12,7 @@ end
 
 # NOTE: Should be constant, otherwise it is not visible inside classes
 LOG = Logger.new(STDERR)
-LOG.level = Logger::INFO
+LOG.level = Logger::DEBUG
 LOG.formatter = Logger::Formatter.new do |severity, _datetime, _progname, message, io|
   io << case severity # FIXME: change to enum values in next version
   when "DEBUG"
@@ -36,12 +36,20 @@ class String
       str << "`" << self << "`"
     end
   end
+
+  def to_path
+    gsub('.', File::SEPARATOR)
+  end
+
+  def from_path
+    gsub(File::SEPARATOR, '.')
+  end
 end
 
 # Clm ##########################################################################
 
 class Clm < Process
-  def run(manifest, *extras)
+  def self.run(manifest, *extras)
     args = Array(String).new(4 + 2*manifest.dependencies.size + extras.size)
     args << "-dynamics"
     args << "-ms"
@@ -51,12 +59,12 @@ class Clm < Process
     end
     args.push *extras
 
-    LOG.debug(String::Builder.new << "Running clm with " << args.quote)
-    super("clm", args: args)
+    LOG.debug(String::Builder.new << "Running clm with " << args)
+    super("clm", args: args, output: true, error: true)
   end
 end
 
-# Project ######################################################################
+# Manifest #####################################################################
 
 class Manifest
   YAML.mapping({
@@ -115,7 +123,7 @@ class Manifest
 
   # class LibraryInfo
   #   YAML.mapping(
-  #     modules: Array(String),
+  #     exposed_modules: Array(String),
   #     other_modules: Array(String),
   #   )
   # end
@@ -130,6 +138,7 @@ class Manifest
 
 end
 
+# Project ######################################################################
 class Project
   FILE_NAME        = "Project.yml"
   LEGACY_FILE_NAME = "Project.prj"
@@ -146,29 +155,45 @@ class Project
 
   def show_info
     LOG.info("Showing information about current project")
-    puts @manifest.to_yaml
+    @manifest.to_yaml(STDOUT)
   end
 
   def show_types
     unlit
-
     LOG.info("Collecting types of functions")
 
     icl_modules.each do |path|
       File.touch path
     end
+
+    # FIXME: how to support multiple executables?
+    Clm.run(@manifest, "-PABC", "-lat", @manifest.executables.first_value.main)
   end
 
   def unlit
   end
 
   def check
+    unlit
+    LOG.info("Typechecking project")
+
+    # FIXME: how to support multiple executables?
+    # FIXME: add output filter
+    Clm.run(@manifest, "-PABC", @manifest.executables.first_value.main)
   end
 
   def build
+    unlit
+    LOG.info("Building project")
+
+    Clm.run(@manifest, @manifest.executables.first_value.main, "-o", @manifest.executables.first_key)
   end
 
   def run
+    build
+    LOG.info("Running project")
+
+    Process.run("./" + @manifest.executables.first_key)
   end
 
   def clean
@@ -194,15 +219,24 @@ class Project
   @dcl_modules : Array(String)?
   @lcl_modules : Array(String)?
 
+  # FIXME: glob for all icls and remove `modules` section from manifest?
   private def icl_modules
-    @icl_modules ||= @manifest.exposed_modules.each.chain(@manifest.other_modules.each).map do |mod|
-      mod.gsub(".", File::SEPARATOR) + ".icl"
-    end.to_a
+    @icl_modules ||=
+      @manifest.exposed_modules.each
+                               .chain(@manifest.other_modules.each)
+                               .chain(@manifest.executables.each_value.map(&.main))
+                               .map do |mod|
+        File.join @manifest.sourcedir, mod.to_path + ".icl"
+      end.to_a
   end
+  # FIXME: glob for all dcls and remove `modules` section from manifest?
   private def dcl_modules
-    @dcl_modules ||= @manifest.exposed_modules.each.chain(@manifest.other_modules.each).map do |mod|
-      mod.gsub(".", File::SEPARATOR) + ".dcl"
-    end.to_a
+    @dcl_modules ||=
+      @manifest.exposed_modules.each
+                               .chain(@manifest.other_modules.each)
+                               .map do |mod|
+        File.join @manifest.sourcedir, mod.to_path + ".dcl"
+      end.to_a
   end
   private def lcl_modules
     @lcl_modules ||= Dir.glob("**/*.lcl")
