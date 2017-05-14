@@ -2,6 +2,10 @@ class Project
   FILE_NAME        = "Project.yml"
   LEGACY_FILE_NAME = "Project.prj"
 
+  HEADER_PREFIX   = ">> module "
+  EXPORTED_PREFIX = ">> "
+  INTERNAL_PREFIX = ">  " # NOTE: be aware of the double spaces!!!
+
   def initialize
     LOG.info("Reading project file")
     @manifest = Manifest.from_yaml File.open(FILE_NAME)
@@ -31,6 +35,11 @@ class Project
   end
 
   def unlit
+    LOG.info("Unliterating modules")
+
+    lcl_modules.each do |mod|
+      unlit_module(mod)
+    end
   end
 
   def check
@@ -75,6 +84,51 @@ class Project
     end
   end
 
+  private def unlit_module(path)
+    lit_path = path
+    imp_path = path.sub(".lcl", ".icl")
+    def_path = path.sub(".lcl", ".dcl")
+
+    # NOTE: accessing lit_path should be safe if `unlit_module` is *only* called with globbed .lcl files
+    lit_time = File.stat(lit_path).mtime
+    # NOTE: `begin/rescue` is an expression, we don't need a block function or a macro to write this down nicely
+    # NOTE: only Times are comparable to each other, therefore we choose the epoch as the default time to compare to
+    imp_time = begin File.stat(imp_path).mtime rescue Time.epoch(0) end
+    def_time = begin File.stat(def_path).mtime rescue Time.epoch(0) end
+
+    return if lit_time < imp_time && lit_time < def_time
+
+    LOG.debug(path)
+
+    # NOTE:
+    #   Although we get a watterfall of `end`s, this is the way to ensure file closings.
+    #   Using `ensure` makes variables nillable, so you can't call `File#close` on them.
+    #   Blocks are always inlined, thuse this is exaclty the same as using `File.close` at the end of the block!
+    #   There is no need for `defer` or forgetting about it!
+    File.open(lit_path) do |lit_file|
+      File.create(imp_path) do |imp_file|
+        File.create(def_path) do |def_file|
+          lit_file.each_line do |line|
+            case line
+            when .starts_with?(HEADER_PREFIX)
+              imp_file << "implementation " << line.lchop(EXPORTED_PREFIX) << NL
+              def_file << "definition " << line.lchop(EXPORTED_PREFIX) << NL
+            when .starts_with?(EXPORTED_PREFIX)
+              imp_file << line.lchop(EXPORTED_PREFIX) << NL
+              def_file << line.lchop(EXPORTED_PREFIX) << NL
+            when .starts_with?(INTERNAL_PREFIX)
+              imp_file << line.lchop(INTERNAL_PREFIX) << NL
+              def_file << NL
+            else
+              imp_file << NL
+              def_file << NL
+            end
+          end
+        end
+      end
+    end
+  end
+
   @icl_modules : Array(String)?
   @dcl_modules : Array(String)?
   @lcl_modules : Array(String)?
@@ -89,6 +143,7 @@ class Project
         File.join @manifest.sourcedir, mod.to_path + ".icl"
       end.to_a
   end
+
   # FIXME: glob for all dcls and remove `modules` section from manifest?
   private def dcl_modules
     @dcl_modules ||=
@@ -98,7 +153,9 @@ class Project
         File.join @manifest.sourcedir, mod.to_path + ".dcl"
       end.to_a
   end
+
   private def lcl_modules
     @lcl_modules ||= Dir.glob("**/*.lcl")
   end
+
 end
