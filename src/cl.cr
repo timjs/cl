@@ -57,6 +57,7 @@ Options:
 " # TODO: Use DocOpt to parse options
 
 begin
+  # NOTE: we use the `?` variant and check on `nil` below instead of raising exceptions
   case ARGV.first?
   when "help"
     puts USAGE
@@ -66,6 +67,7 @@ begin
     # For other options we need to be in a project directory
     prj = Project.new
 
+    # NOTE: `Array#shift` gets elements from the front, `Array#pop` from the back
     case cmd = ARGV.shift?
     when "show"
       case ARGV.shift?

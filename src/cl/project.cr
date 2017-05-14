@@ -13,6 +13,7 @@ class Project
 
   def self.init
     LOG.info("Initialising new project")
+    # FIXME: add `init`
     raise Unimplemented.new
   end
 
@@ -30,7 +31,6 @@ class Project
       File.touch path
     end
 
-    # FIXME: how to support multiple executables?
     Clm.run(@manifest, "-PABC", "-lat", @manifest.executables.first_value.main)
   end
 
@@ -46,7 +46,6 @@ class Project
     unlit
     LOG.info("Typechecking project")
 
-    # FIXME: how to support multiple executables?
     # FIXME: add output filter
     Clm.run(@manifest, "-PABC", @manifest.executables.first_value.main)
   end
@@ -55,7 +54,10 @@ class Project
     unlit
     LOG.info("Building project")
 
+    # FIXME: how to support multiple executables? => Use first executable as default, others can be build when passed as an argument (this is what cabal does)
     Clm.run(@manifest, @manifest.executables.first_value.main, "-o", @manifest.executables.first_key)
+
+    # FIXME: add legacy build option
   end
 
   def run
@@ -92,9 +94,9 @@ class Project
     # NOTE: accessing lit_path should be safe if `unlit_module` is *only* called with globbed .lcl files
     lit_time = File.stat(lit_path).mtime
     # NOTE: `begin/rescue` is an expression, we don't need a block function or a macro to write this down nicely
-    # NOTE: only Times are comparable to each other, therefore we choose the epoch as the default time to compare to
-    imp_time = begin File.stat(imp_path).mtime rescue Time.epoch(0) end
-    def_time = begin File.stat(def_path).mtime rescue Time.epoch(0) end
+    # NOTE: only `Time`s are comparable to each other, therefore we choose the epoch as the default time to compare to if the file doesn't exist
+    imp_time = File.stat(imp_path).mtime rescue Time.epoch(0)
+    def_time = File.stat(def_path).mtime rescue Time.epoch(0)
 
     return if lit_time < imp_time && lit_time < def_time
 
@@ -133,7 +135,7 @@ class Project
   @dcl_modules : Array(String)?
   @lcl_modules : Array(String)?
 
-  # FIXME: glob for all icls and remove `modules` section from manifest?
+  # FIXME: glob for all .icls/.dcls and remove `modules` section from manifest?
   private def icl_modules
     @icl_modules ||=
       @manifest.exposed_modules.each
@@ -144,7 +146,6 @@ class Project
       end.to_a
   end
 
-  # FIXME: glob for all dcls and remove `modules` section from manifest?
   private def dcl_modules
     @dcl_modules ||=
       @manifest.exposed_modules.each
@@ -157,5 +158,4 @@ class Project
   private def lcl_modules
     @lcl_modules ||= Dir.glob("**/*.lcl")
   end
-
 end

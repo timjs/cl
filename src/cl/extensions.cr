@@ -18,7 +18,7 @@ end
 
 class File
   def self.create(filename, mode = "w", **rest)
-    # NOTE: yielding the file is better than capturing the block, this way it will be inlined
+    # NOTE: yielding the file is better than capturing the block, this way it will be inlined!
     self.open(filename, mode, **rest) do |file|
       yield file
     end
