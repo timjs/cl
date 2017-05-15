@@ -1,4 +1,5 @@
 require "YAML"
+require "ecr/macros"
 
 class Manifest
   YAML.mapping({
@@ -70,4 +71,9 @@ class Manifest
   #   )
   # end
 
+  LEGACY_TEMPLATE_NAME = "src/cl/legacy_project.ecr"
+
+  def to_legacy(io)
+    ECR.embed(LEGACY_TEMPLATE_NAME, io)
+  end
 end
