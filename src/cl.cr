@@ -48,18 +48,18 @@ Commands:
     run         Build and run project
     clean       Clean build files
     prune       Alias for `clean --all`
-
-Options:
-    -h, --help  Show this message
-    --version   Show version
-
-    -v, --verbose LEVEL  Set verbosity level [default: warn]
-" # TODO: Use DocOpt to parse options
+"
+# Options:
+#     -h, --help  Show this message
+#     --version   Show version
+#
+#     -v, --verbose LEVEL  Set verbosity level [default: warn]
+# " # TODO: Use DocOpt to parse options
 
 begin
   # NOTE: we use the `?` variant and check on `nil` below instead of raising exceptions
   case ARGV.first?
-  when "help"
+  when "help", nil
     puts USAGE
   when "init"
     Project.init
@@ -68,15 +68,17 @@ begin
     prj = Project.new
 
     # NOTE: `Array#shift` gets elements from the front, `Array#pop` from the back
-    case cmd = ARGV.shift?
+    # NOTE: because we already checked `nil`, we know `ARGV.first` exists
+    case cmd = ARGV.shift
     when "show"
-      case ARGV.shift?
-      when "info"
+      case subcmd = ARGV.shift?
+      when "info", nil
         prj.show_info
       when "types"
         prj.show_types
       else
-        prj.show_info # NOTE: alias for `show info`
+        LOG.fatal(String::Builder.new << subcmd.quote << "is not a valid subcommand of `show`, run `cl help` to see a list of all available commands")
+        exit 1
       end
     when "check"
       prj.check
@@ -90,14 +92,14 @@ begin
       prj.clean
     when "prune"
       prj.prune
-    when nil
-      puts USAGE
     else
       LOG.fatal(String::Builder.new << cmd.quote << "is not a valid command, run `cl help` to see a list of all available commands")
+      exit 1
     end
   end
 rescue exc
   LOG.fatal(String::Builder.new << exc << " (" << exc.class << ")")
+  exit 1
 end
 
 # OPTIONS = {} of Symbol => String | Int32 | Bool
