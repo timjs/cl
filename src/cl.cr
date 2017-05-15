@@ -34,8 +34,7 @@ USAGE = "\
 Clean command line tools
 
 Usage:
-    cl <command> [<arguments>...]
-    cl [options]
+    cl <command> [options] [<arguments>...]
 
 Commands:
     help        Show this message
