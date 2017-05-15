@@ -14,7 +14,8 @@ class Project
   def self.init
     LOG.info("Initialising new project")
     # FIXME: add `init`
-    raise Unimplemented.new
+    LOG.fatal("Unimplemented command")
+    exit 2
   end
 
   def show_info

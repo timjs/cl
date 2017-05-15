@@ -4,14 +4,10 @@ require "docopt"
 
 require "./cl/*"
 
-# Exceptions ###################################################################
-
-class Unimplemented < Exception
-end
-
 # Options ######################################################################
 
-USAGE = "\
+VERSION = "0.4.0"
+USAGE   = "\
 Clean command line tools
 
 Usage:
@@ -36,7 +32,7 @@ Options:
     --version            Show version
 "
 
-OPTS = Docopt.docopt(USAGE, ARGV)
+OPTS = Docopt.docopt(USAGE, version: VERSION)
 ARGS = OPTS["<arguments>"].as(Array(String))
 
 # Logging ######################################################################
