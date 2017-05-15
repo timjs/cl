@@ -24,3 +24,22 @@ class File
     end
   end
 end
+
+enum Logger::Severity
+  def self.from_s(level : String)
+    case level.downcase
+    when "debug"
+      DEBUG
+    when "info"
+      INFO
+    when "warn"
+      WARN
+    when "error"
+      ERROR
+    when "fatal"
+      FATAL
+    else
+      UNKNOWN
+    end
+  end
+end
