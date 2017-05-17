@@ -29,7 +29,7 @@ class Clm
     # NOTE: `#gsub`'s yields a string and a match
     str = str.gsub MODULE_REGEX do |_, match|
       path = File.join(manifest.sourcedir, match["mod"].to_path)
-      lcl_path = path + ".icl"
+      lcl_path = path + ".lcl"
       if manifest.lcl_files.includes?(lcl_path)
         lcl_path
       else
