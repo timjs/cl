@@ -76,4 +76,17 @@ class Manifest
   def to_legacy(io)
     ECR.embed(LEGACY_TEMPLATE_NAME, io)
   end
+
+  # FIXME: place to be?
+  def icl_files
+    @icl_files ||= Dir.glob("**/*.icl")
+  end
+
+  def dcl_files
+    @dcl_files ||= Dir.glob("**/*.dcl")
+  end
+
+  def lcl_files
+    @lcl_files ||= Dir.glob("**/*.lcl")
+  end
 end
