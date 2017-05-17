@@ -18,16 +18,6 @@ class Manifest
       type:    String,
       default: "src",
     },
-    exposed_modules: {
-      key:     "modules",
-      type:    Array(String),
-      default: [] of String,
-    },
-    other_modules: {
-      key:     "other-modules",
-      type:    Array(String),
-      default: [] of String,
-    },
     dependencies: {
       type:    Array(String), # Hash(String, DependencyInfo),
       default: ["Dynamics", "Generics", "Platform"],
@@ -47,13 +37,6 @@ class Manifest
         default: "Main",
       },
     })
-
-    def self.default
-      ExecutableInfo.new(main: "Main")
-    end
-
-    def initialize(@main)
-    end
   end
 
   # class LibraryInfo
