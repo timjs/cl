@@ -2,6 +2,7 @@ class Clm
   # MODULE_REGEX = /(([A-Z][A-Za-z]+\.?)+)(\.(?:i|d)cl)/
   MODULE_REGEX      = /(?<mod>([A-Z][A-Za-z]+\.?)+)(?<ext>\.(?:i|d)cl)/
   UNIFICATION_REGEX = /cannot unify demanded type with offered type:\n (?<demanded>.+)\n (?<offered>.+)/
+  DERIVED_REGEX     = /derived type conflicts with specified type:\n (?<derived>.+)\n (?<specified>.+)\n/
 
   def self.run(manifest, extra_args)
     args = build_args(manifest, extra_args)
@@ -38,6 +39,10 @@ class Clm
     end.gsub UNIFICATION_REGEX do |_, match|
       String.build do |str|
         str << "cannot unify demanded type `" << match["demanded"] << "` with offered type` " << match["offered"] << "`"
+      end
+    end.gsub DERIVED_REGEX do |_, match|
+      String.build do |str|
+        str << "derived type `" << match["derived"] << "` conflicts with specified type `" << match["specified"] << "`"
       end
     end
     STDERR.puts str
