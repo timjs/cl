@@ -60,16 +60,20 @@ class Manifest
     ECR.embed(LEGACY_TEMPLATE_NAME, io)
   end
 
+  @icl_files : Set(String)?
+  @dcl_files : Set(String)?
+  @lcl_files : Set(String)?
+
   # FIXME: place to be?
   def icl_files
-    @icl_files ||= Dir.glob("**/*.icl")
+    @icl_files ||= Dir.glob("**/*.icl").to_set
   end
 
   def dcl_files
-    @dcl_files ||= Dir.glob("**/*.dcl")
+    @dcl_files ||= Dir.glob("**/*.dcl").to_set
   end
 
   def lcl_files
-    @lcl_files ||= Dir.glob("**/*.lcl")
+    @lcl_files ||= Dir.glob("**/*.lcl").to_set
   end
 end

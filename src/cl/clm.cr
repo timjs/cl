@@ -29,6 +29,7 @@ class Clm
   private def self.put_prettified_output(manifest, str)
     # NOTE: `#gsub`'s yields a string and a match
     str = str.gsub MODULE_REGEX do |_, match|
+      # FIXME: errors in library modules are not correctly transformed
       path = File.join(manifest.sourcedir, match["mod"].to_path)
       lcl_path = path + ".lcl"
       if manifest.lcl_files.includes?(lcl_path)
