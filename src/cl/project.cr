@@ -59,7 +59,7 @@ class Project
       File.create(LEGACY_FILE_NAME) do |io|
         @manifest.to_legacy(io)
       end
-      Process.run("cpm", args: [LEGACY_FILE_NAME]) # , output: true, error: true)
+      Process.run("cpm", args: [LEGACY_FILE_NAME], output: LOG.debug?, error: LOG.warn?)
     else
       # FIXME: how to support multiple executables? => Use first executable as default, others can be build when passed as an argument (this is what cabal does)
       Clm.run(@manifest, [@manifest.executables.first_value.main, "-o", @manifest.executables.first_key])

@@ -10,7 +10,7 @@ class Clm
 
     io = String::Builder.new
     # NOTE: clm writes errors to stderr and all other messages to stdout
-    stat = Process.run("clm", args: args, output: false, error: io)
+    stat = Process.run("clm", args: args, output: LOG.debug?, error: io)
     put_prettified_output(manifest, io.to_s)
     stat
   end
