@@ -1,3 +1,5 @@
+require "file_utils"
+
 class Project
   FILE_NAME        = "Project.yml"
   LEGACY_FILE_NAME = "Project.prj"
@@ -76,7 +78,7 @@ class Project
 
     Dir.glob("**/Clean System Files/", "*-sapl", "*-www") do |pat|
       LOG.debug(pat)
-      File.delete(pat)
+      FileUtils.rm_r(pat)
     end
   end
 
@@ -86,7 +88,8 @@ class Project
 
     # NOTE: can't splat an array because size is unknown at compile time, therefore we push args to the created `keys` array
     Dir.glob(@manifest.executables.keys << LEGACY_FILE_NAME << "*-data") do |pat|
-      File.delete(pat)
+      LOG.debug(pat)
+      FileUtils.rm_r(pat)
     end
   end
 
