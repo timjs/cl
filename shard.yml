@@ -1,13 +1,18 @@
-name: cl
-version: 0.1.0
+name:              cl
+version:           0.1.0
 
 authors:
   - Tim Steenvoorden <tim.steenvoorden@gmail.com>
 
 targets:
   cl:
-    main: src/cl.cr
+    main:          src/cl.cr
+    
+dependencies:
+  docopt:
+    github:        chenkovsky/docopt.cr
+    branch:        master
 
-crystal: 0.22.0
+crystal:           0.22.0
 
-license: MIT
+license:           MIT

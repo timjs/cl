@@ -1,18 +1,45 @@
 require "logger"
 require "colorize"
+require "docopt"
 
 require "./cl/*"
 
-# Exceptions ###################################################################
+# Options ######################################################################
 
-class Unimplemented < Exception
-end
+VERSION = "0.4.0"
+USAGE   = "\
+Clean command line tools
+
+Usage:
+    cl <command> [options] [<arguments>...]
+
+Commands:
+    help        Show this message
+    init        Initialise new project
+    show info   Show project info
+    show types  Show types of all functions
+    check       Typecheck modules
+    unlit       Unliterate modules
+    build       Compile project
+    run         Build and run project
+    clean       Clean build files
+    prune       Alias for `clean --all`
+
+Options:
+    -h, --help           Show this message
+    --legacy             Use legacy build system
+    -v, --verbose LEVEL  Set verbosity level [default: warn]
+    --version            Show version
+"
+
+OPTS = Docopt.docopt(USAGE, version: VERSION)
+ARGS = OPTS["<arguments>"].as(Array(String))
 
 # Logging ######################################################################
 
 # NOTE: Should be constant, otherwise it is not visible inside classes
 LOG = Logger.new(STDERR)
-LOG.level = Logger::DEBUG
+LOG.level = Logger::Severity.from_s(OPTS["--verbose"].as(String))
 LOG.formatter = Logger::Formatter.new do |severity, _datetime, _progname, message, io|
   io << case severity # FIXME: change to enum values in next version
   when "DEBUG"
@@ -30,35 +57,11 @@ end
 
 # Main #########################################################################
 
-USAGE = "\
-Clean command line tools
-
-Usage:
-    cl <command> [options] [<arguments>...]
-
-Commands:
-    help        Show this message
-    init        Initialise new project
-    show info   Show project info
-    show types  Show types of all functions
-    check       Typecheck modules
-    unlit       Unliterate modules
-    build       Compile project
-    run         Build and run project
-    clean       Clean build files
-    prune       Alias for `clean --all`
-"
-# Options:
-#     -h, --help  Show this message
-#     --version   Show version
-#
-#     -v, --verbose LEVEL  Set verbosity level [default: warn]
-# " # TODO: Use DocOpt to parse options
+LOG.debug(OPTS.inspect)
 
 begin
-  # NOTE: we use the `?` variant and check on `nil` below instead of raising exceptions
-  case ARGV.first?
-  when "help", nil
+  case cmd = OPTS["<command>"].as(String)
+  when "help"
     puts USAGE
   when "init"
     Project.init
@@ -66,11 +69,9 @@ begin
     # For other options we need to be in a project directory
     prj = Project.new
 
-    # NOTE: `Array#shift` gets elements from the front, `Array#pop` from the back
-    # NOTE: because we already checked `nil`, we know `ARGV.first` exists
-    case cmd = ARGV.shift
+    case cmd
     when "show"
-      case subcmd = ARGV.shift?
+      case subcmd = ARGS.shift?
       when "info", nil
         prj.show_info
       when "types"
@@ -100,14 +101,3 @@ rescue exc
   LOG.fatal(String::Builder.new << exc << " (" << exc.class << ")")
   exit 1
 end
-
-# OPTIONS = {} of Symbol => String | Int32 | Bool
-# OptionParser.parse! do |parser|
-#   parser.on("-h", "--help", "Show this message") do
-#     puts USAGE
-#   end
-#   parser.on("-v LEVEL", "--verbose LEVEL", "Set verbosity level [default: warn]") do |level|
-#     OPTIONS[:verbose] = level
-#   end
-# end
-# puts OPTIONS

@@ -1,3 +1,5 @@
+require "file_utils"
+
 class Project
   FILE_NAME        = "Project.yml"
   LEGACY_FILE_NAME = "Project.prj"
@@ -14,7 +16,8 @@ class Project
   def self.init
     LOG.info("Initialising new project")
     # FIXME: add `init`
-    raise Unimplemented.new
+    LOG.fatal("Unimplemented command")
+    exit 2
   end
 
   def show_info
@@ -26,19 +29,18 @@ class Project
     unlit
     LOG.info("Collecting types of functions")
 
-    # FIXME: glob over .icl files would be fine...
-    icl_modules.each do |path|
+    @manifest.icl_files.each do |path|
       File.touch path
     end
 
-    Clm.run(@manifest, "-PABC", "-lat", @manifest.executables.first_value.main)
+    Clm.run(@manifest, ["-PABC", "-lat", @manifest.executables.first_value.main])
   end
 
   def unlit
     LOG.info("Unliterating modules")
 
-    lcl_modules.each do |mod|
-      unlit_module(mod)
+    @manifest.lcl_files.each do |path|
+      unlit_file(path)
     end
   end
 
@@ -46,25 +48,29 @@ class Project
     unlit
     LOG.info("Typechecking project")
 
-    # FIXME: add output filter
-    Clm.run(@manifest, "-PABC", @manifest.executables.first_value.main)
+    Clm.run(@manifest, ["-PABC", @manifest.executables.first_value.main])
   end
 
   def build
     unlit
     LOG.info("Building project")
 
-    # FIXME: how to support multiple executables? => Use first executable as default, others can be build when passed as an argument (this is what cabal does)
-    Clm.run(@manifest, @manifest.executables.first_value.main, "-o", @manifest.executables.first_key)
-
-    # FIXME: add legacy build option
+    if OPTS["--legacy"]
+      File.create(LEGACY_FILE_NAME) do |io|
+        @manifest.to_legacy(io)
+      end
+      Process.run("cpm", args: [LEGACY_FILE_NAME], output: LOG.debug?, error: LOG.warn?)
+    else
+      # FIXME: how to support multiple executables? => Use first executable as default, others can be build when passed as an argument (this is what cabal does)
+      Clm.run(@manifest, [@manifest.executables.first_value.main, "-o", @manifest.executables.first_key])
+    end
   end
 
   def run
     build
     LOG.info("Running project")
 
-    Process.run("./" + @manifest.executables.first_key)
+    Process.run("./" + @manifest.executables.first_key, output: true, error: true)
   end
 
   def clean
@@ -72,7 +78,7 @@ class Project
 
     Dir.glob("**/Clean System Files/", "*-sapl", "*-www") do |pat|
       LOG.debug(pat)
-      File.delete(pat)
+      FileUtils.rm_r(pat)
     end
   end
 
@@ -82,16 +88,17 @@ class Project
 
     # NOTE: can't splat an array because size is unknown at compile time, therefore we push args to the created `keys` array
     Dir.glob(@manifest.executables.keys << LEGACY_FILE_NAME << "*-data") do |pat|
-      File.delete(pat)
+      LOG.debug(pat)
+      FileUtils.rm_r(pat)
     end
   end
 
-  private def unlit_module(path)
+  private def unlit_file(path)
     lit_path = path
     imp_path = path.sub(".lcl", ".icl")
     def_path = path.sub(".lcl", ".dcl")
 
-    # NOTE: accessing lit_path should be safe if `unlit_module` is *only* called with globbed .lcl files
+    # NOTE: accessing lit_path should be safe if `unlit_file` is *only* called with globbed .lcl files
     lit_time = File.stat(lit_path).mtime
     # NOTE: `begin/rescue` is an expression, we don't need a block function or a macro to write this down nicely
     # NOTE: only `Time`s are comparable to each other, therefore we choose the epoch as the default time to compare to if the file doesn't exist
@@ -131,31 +138,25 @@ class Project
     end
   end
 
-  @icl_modules : Array(String)?
-  @dcl_modules : Array(String)?
-  @lcl_modules : Array(String)?
+  # @icl_modules : Array(String)?
+  # @dcl_modules : Array(String)?
+  # @lcl_modules : Array(String)?
 
-  # FIXME: glob for all .icls/.dcls and remove `modules` section from manifest?
-  private def icl_modules
-    @icl_modules ||=
-      @manifest.exposed_modules.each
-                               .chain(@manifest.other_modules.each)
-                               .chain(@manifest.executables.each_value.map(&.main))
-                               .map do |mod|
-        File.join @manifest.sourcedir, mod.to_path + ".icl"
-      end.to_a
-  end
+  # # FIXME: use macros to define functions below
+  # private def icl_modules
+  #   @icl_modules ||= @icl_files.map do |path|
+  #     path.rchop(".icl").lchop(@manifest.sourcedir).from_path
+  #   end
+  # end
+  # private def dcl_modules
+  #   @dcl_modules ||= @dcl_files.map do |path|
+  #     path.rchop(".dcl").lchop(@manifest.sourcedir).from_path
+  #   end
+  # end
+  # private def lcl_modules
+  #   @lcl_modules ||= @lcl_files.map do |path|
+  #     path.rchop(".lcl").lchop(@manifest.sourcedir).from_path
+  #   end
+  # end
 
-  private def dcl_modules
-    @dcl_modules ||=
-      @manifest.exposed_modules.each
-                               .chain(@manifest.other_modules.each)
-                               .map do |mod|
-        File.join @manifest.sourcedir, mod.to_path + ".dcl"
-      end.to_a
-  end
-
-  private def lcl_modules
-    @lcl_modules ||= Dir.glob("**/*.lcl")
-  end
 end

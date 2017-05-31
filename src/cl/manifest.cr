@@ -1,4 +1,5 @@
 require "YAML"
+require "ecr/macros"
 
 class Manifest
   YAML.mapping({
@@ -16,16 +17,6 @@ class Manifest
     sourcedir: {
       type:    String,
       default: "src",
-    },
-    exposed_modules: {
-      key:     "modules",
-      type:    Array(String),
-      default: [] of String,
-    },
-    other_modules: {
-      key:     "other-modules",
-      type:    Array(String),
-      default: [] of String,
     },
     dependencies: {
       type:    Array(String), # Hash(String, DependencyInfo),
@@ -46,13 +37,6 @@ class Manifest
         default: "Main",
       },
     })
-
-    def self.default
-      ExecutableInfo.new(main: "Main")
-    end
-
-    def initialize(@main)
-    end
   end
 
   # class LibraryInfo
@@ -70,4 +54,26 @@ class Manifest
   #   )
   # end
 
+  LEGACY_TEMPLATE_NAME = "src/cl/legacy_project.ecr"
+
+  def to_legacy(io)
+    ECR.embed(LEGACY_TEMPLATE_NAME, io)
+  end
+
+  @icl_files : Set(String)?
+  @dcl_files : Set(String)?
+  @lcl_files : Set(String)?
+
+  # FIXME: place to be?
+  def icl_files
+    @icl_files ||= Dir.glob("**/*.icl").to_set
+  end
+
+  def dcl_files
+    @dcl_files ||= Dir.glob("**/*.dcl").to_set
+  end
+
+  def lcl_files
+    @lcl_files ||= Dir.glob("**/*.lcl").to_set
+  end
 end
