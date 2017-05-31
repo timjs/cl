@@ -4,7 +4,7 @@ A simple, no-nonsense Clean project manager
 
 ## Installation
 
-You need [Crylstal](https://crystal-lang.org) to build this project.
+You need [Crystal](https://crystal-lang.org) to build this project.
 Below some simple instructions for macOS.
 Other Unixes should be supported too.
 
